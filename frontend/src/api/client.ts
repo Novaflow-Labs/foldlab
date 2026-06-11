@@ -77,7 +77,10 @@ export function streamChat(req: ChatRequest, h: ChatStreamHandlers): AbortContro
         const { value, done } = await reader.read();
         if (done) break;
         buf += decoder.decode(value, { stream: true });
-        const blocks = buf.split("\n\n");
+        // SSE events are separated by a blank line. The server (sse-starlette)
+        // uses CRLF, so split on \r?\n\r?\n — a plain "\n\n" never matches
+        // "\r\n\r\n" and would deliver zero events.
+        const blocks = buf.split(/\r?\n\r?\n/);
         buf = blocks.pop() ?? "";
         for (const block of blocks) dispatch(block, h);
       }
@@ -93,7 +96,7 @@ export function streamChat(req: ChatRequest, h: ChatStreamHandlers): AbortContro
 function dispatch(block: string, h: ChatStreamHandlers): void {
   let event = "message";
   const dataLines: string[] = [];
-  for (const line of block.split("\n")) {
+  for (const line of block.split(/\r?\n/)) {
     if (line.startsWith("event:")) event = line.slice(6).trim();
     else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
   }
