@@ -7,18 +7,28 @@ import type { PickSelection } from "../types";
 /**
  * Subscribe to the plugin's click behavior. When a structure element is
  * clicked, read chain/residue/resName from the first picked location and
- * forward it to `onPick`. Returns an unsubscribe function.
+ * forward it to `onPick`. When a click lands on empty space (no structure
+ * element), fire `onDeselect` so callers can clear any picked-residue context.
+ * Returns an unsubscribe function.
  */
 export function subscribePick(
   plugin: PluginUIContext,
   onPick: (selection: PickSelection) => void,
+  onDeselect: () => void,
 ): () => void {
   const sub = plugin.behaviors.interaction.click.subscribe((event) => {
     const loci = event.current.loci;
-    if (!StructureElement.Loci.is(loci)) return;
+    if (!StructureElement.Loci.is(loci)) {
+      // Clicked empty space / non-structure chrome — treat as a deselect.
+      onDeselect();
+      return;
+    }
 
     const location = StructureElement.Loci.getFirstLocation(loci);
-    if (!location) return;
+    if (!location) {
+      onDeselect();
+      return;
+    }
 
     const selection: PickSelection = {
       chain: StructureProperties.chain.label_asym_id(location),

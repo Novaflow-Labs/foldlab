@@ -11,6 +11,7 @@ import { FoldControls, useJobs } from "./components/FoldControls";
 import { ResultsGallery } from "./components/ResultsGallery";
 import { SequenceEditor } from "./components/SequenceEditor";
 import { VariantPanel } from "./components/VariantPanel";
+import { jobLabel, formatJobDate } from "./lib/jobs";
 import { useJobsStore } from "./state/useJobsStore";
 import { BrandGlyph } from "./ui/icons";
 import { ScoreChips } from "./ui/ScoreChips";
@@ -116,13 +117,17 @@ export default function App() {
               structureFormat={selectedJob?.structure_format ?? "pdb"}
               directives={directives}
               onPick={setPickContext}
+              onDeselect={() => setPickContext(null)}
             />
 
             {showStructure && selectedJob && (
               <div className="viewer-card">
                 <div className="viewer-card__head">
-                  <span className="viewer-card__label">{selectedJob.label}</span>
+                  <span className="viewer-card__label">{jobLabel(selectedJob)}</span>
                   <span className="viewer-card__model">{selectedJob.model}</span>
+                  <span className="viewer-card__date">
+                    {formatJobDate(selectedJob.submitted_at)}
+                  </span>
                 </div>
                 <ScoreChips job={selectedJob} size="lg" />
               </div>

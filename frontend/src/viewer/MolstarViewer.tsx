@@ -12,14 +12,16 @@ import "molstar/lib/mol-plugin-ui/skin/dark.scss";
 import "./viewer.css";
 
 /**
- * FROZEN PROP INTERFACE — kept exactly as the Phase-0 placeholder declared it.
- * Agent E imports <MolstarViewer> by these props.
+ * The original four props are the FROZEN Phase-0 contract that Agent E imports
+ * <MolstarViewer> by. `onDeselect` is an additive, optional prop — it fires when
+ * the user clicks empty space — so existing callers stay unaffected.
  */
 export interface MolstarViewerProps {
   structureUrl: string | null;
   structureFormat?: string; // "pdb" | "mmcif"
   directives?: Directive[];
   onPick?: (selection: PickSelection) => void;
+  onDeselect?: () => void;
 }
 
 export function MolstarViewer({
@@ -27,6 +29,7 @@ export function MolstarViewer({
   structureFormat = "pdb",
   directives,
   onPick,
+  onDeselect,
 }: MolstarViewerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pluginRef = useRef<PluginUIContext | null>(null);
@@ -41,9 +44,12 @@ export function MolstarViewer({
   const appliedCountRef = useRef(0);
   // Serializes async work so overlapping renders apply in order.
   const queueRef = useRef<Promise<unknown>>(Promise.resolve());
-  // Latest onPick, read through a ref so the picking subscription is stable.
+  // Latest onPick/onDeselect, read through refs so the picking subscription is
+  // stable across renders.
   const onPickRef = useRef(onPick);
   onPickRef.current = onPick;
+  const onDeselectRef = useRef(onDeselect);
+  onDeselectRef.current = onDeselect;
 
   // Init the plugin exactly once and subscribe picking. The `disposed` guard
   // tolerates React 18 StrictMode's mount/unmount/mount in development.
@@ -59,7 +65,11 @@ export function MolstarViewer({
         throw new Error("viewer disposed during init");
       }
       pluginRef.current = plugin;
-      unsubscribe = subscribePick(plugin, (sel) => onPickRef.current?.(sel));
+      unsubscribe = subscribePick(
+        plugin,
+        (sel) => onPickRef.current?.(sel),
+        () => onDeselectRef.current?.(),
+      );
       return plugin;
     });
     readyRef.current = ready;

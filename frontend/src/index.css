@@ -1,7 +1,7 @@
 /* ============================================================================
    FOLDLAB — "fluorescence-lab precision instrument"
    Dark, luminous, technical. The 3D viewer is the hero on a near-black stage;
-   side panels frame it like instrument bezels. GFP-green signature accent.
+   side panels frame it like instrument bezels. NovaFlow purple signature accent.
    Presentation-only theme.
    ========================================================================== */
 
@@ -24,21 +24,21 @@
   --border: rgba(150, 180, 205, 0.12);
   --border-strong: rgba(150, 180, 205, 0.22);
 
-  /* ---- Signature accent: GFP green ---- */
-  --accent: #5ef2a8;
-  --accent-dim: #3bbf7f;
-  --accent-deep: #1f8a5a;
-  --accent-glow: rgba(94, 242, 168, 0.35);
-  --accent-soft: rgba(94, 242, 168, 0.1);
-  --accent-ink: #05130c;
+  /* ---- Signature accent: NovaFlow purple ---- */
+  --accent: #522eee;
+  --accent-dim: #7c5cff;
+  --accent-deep: #3a1fb0;
+  --accent-glow: rgba(82, 46, 238, 0.35);
+  --accent-soft: rgba(82, 46, 238, 0.1);
+  --accent-ink: #f4f2ff;
 
   /* ---- Semantic data colors ---- */
-  --ok: #5ef2a8;
+  --ok: #522eee;
   --warn: #ffc24b;
   --bad: #ff6b6b;
   --info: #6cc2ff;
 
-  --ok-soft: rgba(94, 242, 168, 0.12);
+  --ok-soft: rgba(82, 46, 238, 0.12);
   --warn-soft: rgba(255, 194, 75, 0.12);
   --bad-soft: rgba(255, 107, 107, 0.12);
   --info-soft: rgba(108, 194, 255, 0.12);
@@ -81,7 +81,7 @@ body {
   /* Layered atmosphere: deep radial wash + a faint hex/dot grid. */
   background-color: var(--bg);
   background-image:
-    radial-gradient(1100px 620px at 78% -12%, rgba(31, 138, 90, 0.1), transparent 60%),
+    radial-gradient(1100px 620px at 78% -12%, rgba(82, 46, 238, 0.1), transparent 60%),
     radial-gradient(900px 520px at -8% 112%, rgba(40, 60, 95, 0.14), transparent 55%),
     radial-gradient(circle at center, rgba(150, 180, 205, 0.05) 0.6px, transparent 0.6px);
   background-size: auto, auto, 26px 26px;
@@ -236,6 +236,11 @@ body::before {
 .panel--center {
   display: grid;
   grid-template-rows: 1fr auto;
+  /* minmax(0, 1fr): the implicit column would otherwise be `auto` and size to
+     content, letting the results strip expand past the panel and get clipped by
+     `.panel { overflow: hidden }` instead of scrolling. The 0 minimum pins the
+     column to the panel width so the strip's overflow-x can engage. */
+  grid-template-columns: minmax(0, 1fr);
   background: var(--bg);
 }
 
@@ -508,7 +513,7 @@ select.input {
 }
 
 .btn--primary:hover:not(:disabled) {
-  background: #74f6b6;
+  background: #7c5cff;
   transform: translateY(-1px);
   box-shadow: var(--shadow-glow), var(--shadow-sm);
 }
@@ -558,7 +563,7 @@ select.input {
 }
 
 .btn--link:hover:not(:disabled) {
-  color: #74f6b6;
+  color: #7c5cff;
   text-decoration: underline;
 }
 
@@ -689,6 +694,31 @@ select.input {
   background: var(--info-soft);
 }
 
+/* Dismiss (✕) button inside the "Selected:" pick chip. */
+.chip__x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 2px;
+  padding: 1px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.chip__x:hover {
+  opacity: 1;
+  background: rgba(108, 194, 255, 0.18);
+}
+.chip__x:focus-visible {
+  outline: none;
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--info-soft);
+}
+
 /* ============================ Sequence ruler ============================ */
 
 .ruler {
@@ -776,7 +806,7 @@ select.input {
 .badge--completed {
   color: var(--ok);
   background: var(--ok-soft);
-  border-color: rgba(94, 242, 168, 0.32);
+  border-color: rgba(82, 46, 238, 0.32);
 }
 
 .badge--failed {
@@ -857,7 +887,7 @@ select.input {
   min-height: 0;
   border-bottom: 1px solid var(--border);
   background:
-    radial-gradient(140% 100% at 50% 0%, rgba(31, 138, 90, 0.06), transparent 55%),
+    radial-gradient(140% 100% at 50% 0%, rgba(82, 46, 238, 0.06), transparent 55%),
     var(--bg);
 }
 
@@ -905,6 +935,14 @@ select.input {
   color: var(--accent-dim);
 }
 
+.viewer-card__date {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .viewer-card {
     animation: reveal 0.4s ease forwards;
@@ -918,7 +956,7 @@ select.input {
   z-index: 4;
   /* Opaque dark backdrop so the no-structure state never shows the bare canvas. */
   background:
-    radial-gradient(140% 100% at 50% 0%, rgba(31, 138, 90, 0.06), transparent 55%),
+    radial-gradient(140% 100% at 50% 0%, rgba(82, 46, 238, 0.06), transparent 55%),
     var(--bg);
   display: flex;
   flex-direction: column;
@@ -1027,7 +1065,7 @@ select.input {
 
 /* tone coloring — key + bar pick up the tone */
 .scorechip--ok {
-  border-color: rgba(94, 242, 168, 0.28);
+  border-color: rgba(82, 46, 238, 0.28);
   color: var(--ok);
 }
 .scorechip--warn {
@@ -1067,6 +1105,9 @@ select.input {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* Allow this grid item to shrink below its content width so the strip inside
+     is bounded by the panel (defense-in-depth with panel--center's minmax). */
+  min-width: 0;
   background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
 }
 
@@ -1095,10 +1136,40 @@ select.input {
 .gallery__strip {
   display: flex;
   gap: var(--sp-2);
-  padding: 14px var(--sp-4);
+  padding: 14px var(--sp-4) 8px;
   overflow-x: auto;
   overflow-y: hidden;
   min-height: 0;
+  /* Drag-to-pan affordance (see ResultsGallery pointer handlers). */
+  cursor: grab;
+  /* Always-visible, on-brand scrollbar (Firefox). */
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-deep) transparent;
+}
+
+/* While click-dragging the strip: grabbing cursor + no text/selection flicker. */
+.gallery__strip.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+.gallery__strip.is-dragging .result {
+  cursor: grabbing;
+}
+
+/* Always-visible, on-brand scrollbar (WebKit/Chromium). */
+.gallery__strip::-webkit-scrollbar {
+  height: 10px;
+}
+.gallery__strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+.gallery__strip::-webkit-scrollbar-thumb {
+  background: var(--accent-deep);
+  border-radius: 999px;
+  border: 2px solid var(--bg-2);
+}
+.gallery__strip::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 .gallery__empty {
@@ -1407,7 +1478,7 @@ select.input {
 }
 
 .chat__send:hover:not(:disabled) {
-  background: #74f6b6;
+  background: #7c5cff;
   box-shadow: var(--shadow-glow);
 }
 
@@ -1592,7 +1663,7 @@ select.input {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(94, 242, 168, 0.35);
+  background: rgba(82, 46, 238, 0.35);
   background-clip: padding-box;
 }
 

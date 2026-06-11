@@ -8,7 +8,7 @@ import { streamChat } from "../api/chat";
 import { useChatStore } from "../state/useChatStore";
 import { useJobsStore } from "../state/useJobsStore";
 import type { Directive } from "../types";
-import { SendIcon } from "../ui/icons";
+import { CrossIcon, SendIcon } from "../ui/icons";
 
 /** Short human-readable label for a directive, for the inline activity chips. */
 function directiveLabel(d: Directive): string {
@@ -40,6 +40,7 @@ function directiveLabel(d: Directive): string {
 export function ChatPanel() {
   const projectId = useJobsStore((s) => s.projectId);
   const pickContext = useJobsStore((s) => s.pickContext);
+  const setPickContext = useJobsStore((s) => s.setPickContext);
   const directives = useJobsStore((s) => s.directives);
   const pushDirective = useJobsStore((s) => s.pushDirective);
   const clearDirectives = useJobsStore((s) => s.clearDirectives);
@@ -162,6 +163,15 @@ export function ChatPanel() {
         {pickLabel && (
           <span className="chip chip--pick chat__pick" title="Selected residue (sent as context)">
             Selected: {pickLabel}
+            <button
+              type="button"
+              className="chip__x"
+              title="Clear selection"
+              aria-label="Clear selection"
+              onClick={() => setPickContext(null)}
+            >
+              <CrossIcon size={10} />
+            </button>
           </span>
         )}
       </div>

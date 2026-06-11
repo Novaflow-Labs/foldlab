@@ -1,7 +1,8 @@
 // Horizontally-scrollable strip of fold-job result cards: sortable, filterable
 // by batch, click-to-select. The selected job's card gets an accent ring.
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type PointerEvent, type WheelEvent } from "react";
 
+import { jobLabel } from "../lib/jobs";
 import { useJobsStore } from "../state/useJobsStore";
 import type { FoldJob } from "../types";
 import { CrossIcon } from "../ui/icons";
@@ -40,6 +41,20 @@ function metric(job: FoldJob, key: SortKey): number | null {
   }
 }
 
+/**
+ * Let a plain vertical mouse wheel scroll the single-row strip horizontally.
+ * Shift+wheel and trackpad horizontal gestures already produce deltaX, so we
+ * only translate when the gesture is predominantly vertical. No preventDefault:
+ * nothing scrolls vertically around the strip, and it avoids React's
+ * passive-listener warning.
+ */
+function scrollHorizontally(e: WheelEvent<HTMLDivElement>) {
+  const el = e.currentTarget;
+  if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+  if (el.scrollWidth <= el.clientWidth) return;
+  el.scrollLeft += e.deltaY;
+}
+
 export function ResultsGallery() {
   const projectId = useJobsStore((s) => s.projectId);
   const selectedJobId = useJobsStore((s) => s.selectedJobId);
@@ -49,6 +64,48 @@ export function ResultsGallery() {
 
   const { data: jobs = [], isLoading } = useJobs(projectId);
   const [sortKey, setSortKey] = useState<SortKey>("rank_hint");
+
+  // Click-and-drag panning so the strip scrolls with a plain mouse. We only
+  // enter drag mode once the pointer moves past a small threshold (and only when
+  // the strip overflows), so a normal click still selects a card. Mouse-only —
+  // touch/pen keep their native scrolling.
+  const drag = useRef<{ startX: number; startLeft: number; pointerId: number; active: boolean } | null>(
+    null,
+  );
+  // True for the click that immediately follows a drag, so we can swallow it.
+  const draggedRef = useRef(false);
+
+  function onPointerDown(e: PointerEvent<HTMLDivElement>) {
+    draggedRef.current = false;
+    if (e.pointerType !== "mouse" || e.button !== 0) return;
+    const el = e.currentTarget;
+    if (el.scrollWidth <= el.clientWidth) return; // nothing to pan
+    drag.current = { startX: e.clientX, startLeft: el.scrollLeft, pointerId: e.pointerId, active: false };
+  }
+
+  function onPointerMove(e: PointerEvent<HTMLDivElement>) {
+    const d = drag.current;
+    if (!d) return;
+    const dx = e.clientX - d.startX;
+    if (!d.active) {
+      if (Math.abs(dx) < 5) return; // movement threshold — below this it's a click
+      d.active = true;
+      draggedRef.current = true;
+      e.currentTarget.setPointerCapture(d.pointerId);
+      e.currentTarget.classList.add("is-dragging");
+    }
+    e.currentTarget.scrollLeft = d.startLeft - dx;
+  }
+
+  function endDrag(e: PointerEvent<HTMLDivElement>) {
+    const d = drag.current;
+    drag.current = null;
+    if (!d?.active) return;
+    e.currentTarget.classList.remove("is-dragging");
+    if (e.currentTarget.hasPointerCapture(d.pointerId)) {
+      e.currentTarget.releasePointerCapture(d.pointerId);
+    }
+  }
 
   const visible = useMemo(() => {
     const filtered =
@@ -108,7 +165,14 @@ export function ResultsGallery() {
       )}
 
       {!isLoading && visible.length > 0 && (
-        <div className="gallery__strip">
+        <div
+          className="gallery__strip"
+          onWheel={scrollHorizontally}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+        >
           {visible.map((job, i) => {
             const selectable = job.state === "completed" && job.has_structure;
             return (
@@ -118,11 +182,18 @@ export function ResultsGallery() {
                 className={`result ${selectedJobId === job.id ? "is-selected" : ""} ${
                   selectable ? "" : "is-disabled"
                 }`}
-                onClick={() => selectable && setSelectedJobId(job.id)}
+                onClick={() => {
+                  // Swallow the click that ends a drag so panning never selects.
+                  if (draggedRef.current) {
+                    draggedRef.current = false;
+                    return;
+                  }
+                  if (selectable) setSelectedJobId(job.id);
+                }}
                 title={selectable ? "Load structure" : job.error ?? "Structure not ready"}
               >
                 <div className="result__head">
-                  <span className="result__label">{job.label}</span>
+                  <span className="result__label">{jobLabel(job)}</span>
                   {job.rank_hint != null && (
                     <span className="result__rank">#{job.rank_hint}</span>
                   )}
