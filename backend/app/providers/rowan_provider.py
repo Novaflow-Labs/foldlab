@@ -11,6 +11,7 @@ file and read the bytes back, reporting `structure_format="pdb"`.
 from __future__ import annotations
 
 import os
+import shutil
 import tempfile
 from typing import Any
 
@@ -58,6 +59,14 @@ def _message_text(msg: Any) -> str:
     return str(msg)
 
 
+def _norm_lddt(value: Any) -> float | None:
+    """Rowan reports avg_lddt as a 0-1 fraction; normalize to the 0-100 pLDDT
+    scale used across the app (mock provider + UI score chips)."""
+    if value is None:
+        return None
+    return round(value * 100, 1) if value <= 1.0 else round(value, 1)
+
+
 class RowanProvider(FoldingProvider):
     name = "rowan"
 
@@ -77,7 +86,8 @@ class RowanProvider(FoldingProvider):
         self._validate_model(req.model)
         wf = rowan.submit_protein_cofolding_workflow(
             initial_protein_sequences=req.protein_sequences,
-            initial_smiles_list=(req.ligand_smiles or None),
+            # Rowan requires a list (empty = protein-only); None fails validation.
+            initial_smiles_list=req.ligand_smiles,
             ligand_binding_affinity_index=req.affinity_ligand_index,
             model=req.model,
             name=req.name,
@@ -112,7 +122,7 @@ class RowanProvider(FoldingProvider):
         scores: dict[str, Any] = {
             "ptm": getattr(scores_obj, "ptm", None),
             "iptm": getattr(scores_obj, "iptm", None),
-            "avg_lddt": getattr(scores_obj, "avg_lddt", None),
+            "avg_lddt": _norm_lddt(getattr(scores_obj, "avg_lddt", None)),
             "confidence": getattr(scores_obj, "confidence_score", None),
         }
         if affinity is not None:
@@ -150,7 +160,7 @@ class RowanProvider(FoldingProvider):
                 PerModelExtras(
                     ptm=getattr(p_scores, "ptm", None),
                     iptm=getattr(p_scores, "iptm", None),
-                    avg_lddt=getattr(p_scores, "avg_lddt", None),
+                    avg_lddt=_norm_lddt(getattr(p_scores, "avg_lddt", None)),
                     confidence=getattr(p_scores, "confidence_score", None),
                     affinity_pred_value=getattr(p_aff, "pred_value", None),
                     affinity_probability=getattr(p_aff, "probability_binary", None),
@@ -165,7 +175,7 @@ class RowanProvider(FoldingProvider):
             PerModelExtras(
                 ptm=getattr(top_scores, "ptm", None),
                 iptm=getattr(top_scores, "iptm", None),
-                avg_lddt=getattr(top_scores, "avg_lddt", None),
+                avg_lddt=_norm_lddt(getattr(top_scores, "avg_lddt", None)),
                 confidence=getattr(top_scores, "confidence_score", None),
                 affinity_pred_value=getattr(top_affinity, "pred_value", None),
                 affinity_probability=getattr(
@@ -178,20 +188,19 @@ class RowanProvider(FoldingProvider):
 
     @staticmethod
     def _download_pdb_bytes(result: Any) -> bytes:
-        """Fetch the predicted structure and read its PDB bytes off a temp file."""
+        """Fetch the predicted structure's PDB bytes.
+
+        Rowan's `Protein.download_pdb_file(path, name)` treats `path` as a
+        DIRECTORY (it mkdir's it) and writes `{name}.pdb` inside. We point it at
+        a fresh temp directory, read the file back, then remove the directory.
+        """
         protein = result.get_predicted_structure()
         if protein is None:
             raise RuntimeError("Rowan result has no predicted structure")
-        tmp_path: str | None = None
+        tmp_dir = tempfile.mkdtemp(prefix="foldlab-pdb-")
         try:
-            fd, tmp_path = tempfile.mkstemp(suffix=".pdb")
-            os.close(fd)
-            protein.download_pdb_file(tmp_path)
-            with open(tmp_path, "rb") as fh:
+            protein.download_pdb_file(tmp_dir, name="structure")
+            with open(os.path.join(tmp_dir, "structure.pdb"), "rb") as fh:
                 return fh.read()
         finally:
-            if tmp_path is not None:
-                try:
-                    os.remove(tmp_path)
-                except OSError:
-                    pass
+            shutil.rmtree(tmp_dir, ignore_errors=True)
