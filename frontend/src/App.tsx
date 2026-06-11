@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { listProjects } from "./api/folding";
 import { apiGet, structureUrl } from "./api/client";
 import { ChatPanel } from "./components/ChatPanel";
+import { DevSubmitPanel } from "./components/DevSubmitPanel";
 import { FoldControls, useJobs } from "./components/FoldControls";
 import { ResultsGallery } from "./components/ResultsGallery";
 import { SequenceEditor } from "./components/SequenceEditor";
@@ -48,6 +49,7 @@ export default function App() {
   const setPickContext = useJobsStore((s) => s.setPickContext);
 
   const [tab, setTab] = useState<LeftTab>("sequence");
+  const [devOpen, setDevOpen] = useState(false);
 
   // Resolve the active project: first project, fallback to id 1 ("Demo").
   const { data: projects } = useQuery({ queryKey: ["projects"], queryFn: listProjects });
@@ -79,6 +81,13 @@ export default function App() {
         </div>
 
         <div className="app__right">
+          <button
+            className="btn btn--ghost btn--sm"
+            onClick={() => setDevOpen(true)}
+            title="Direct submit a Boltz-2 fold spec (YAML)"
+          >
+            Dev
+          </button>
           <span className="app__project">{projectName}</span>
           <span
             className={`mode-pill ${isLive ? "mode-pill--live" : ""}`}
@@ -139,6 +148,8 @@ export default function App() {
           <ChatPanel />
         </section>
       </main>
+
+      {devOpen && <DevSubmitPanel onClose={() => setDevOpen(false)} />}
     </div>
   );
 }
