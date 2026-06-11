@@ -1,0 +1,19 @@
+[project]
+name = "protein-demo-backend"
+version = "0.1.0"
+description = "FastAPI backend for the NLP-driven protein visualization & folding demo"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+# B008: FastAPI's `Depends()` in defaults is the intended idiom.
+# UP042: keep explicit `(str, Enum)` — we rely on `.value`, and StrEnum changes str() output.
+ignore = ["E501", "B008", "UP042"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

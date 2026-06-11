@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets & local DB
+.env
+*.db
+
+# Folded structures (generated at runtime); keep the dir via .gitkeep
+backend/app/data/structures/*
+!backend/app/data/structures/.gitkeep
+
+# Node / Vite
+node_modules/
+dist/
+.vite/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
