@@ -103,15 +103,48 @@ export function ChatPanel() {
       }${pickContext.resName ? ` ${pickContext.resName}` : ""}`
     : null;
 
-  // Quick actions — robust fallbacks that don't depend on the LLM parsing.
+  // Curated "smart suggestions" — each shows off a real capability of the
+  // workspace (optimize/batch, homo-oligomer assembly, viewer analysis, design).
   const quickActions: { label: string; prompt: string }[] = [
-    { label: "Fold selected", prompt: "Fold the currently selected sequence." },
-    { label: "Color chain A", prompt: "Color chain A blue." },
     {
-      label: pickLabel ? `Explain ${pickLabel}` : "Explain selection",
-      prompt: "Explain the residue I have selected and its likely role.",
+      label: "Optimize binding",
+      prompt:
+        "Act as a protein engineer optimizing this protein for tighter, more stable binding. " +
+        "Propose a focused panel of point mutations at the most promising positions, then " +
+        "batch-fold them so I can rank the candidates by predicted affinity and confidence.",
     },
-    { label: "Summarize results", prompt: "Summarize the current folding results and their scores." },
+    {
+      label: "Assemble oligomer",
+      prompt:
+        "Predict how this protein self-assembles: fold it as a homotrimer and as a homohexamer, " +
+        "then tell me which oligomeric state folds with higher confidence.",
+    },
+    {
+      label: "Map active site",
+      prompt:
+        "Identify the most likely active site or functional pocket from the structure, then " +
+        "color it and label the key residues in the viewer.",
+    },
+    {
+      label: "Color by confidence",
+      prompt:
+        "Color the structure to reflect predicted confidence — highlight the least-confident " +
+        "loops in red — and tell me which regions are reliable and which to treat with caution.",
+    },
+    {
+      label: "Engineer stability",
+      prompt:
+        "Recommend the top stabilizing mutations (new disulfides, salt bridges, core repacking), " +
+        "explain the rationale for each, then batch-fold the panel to test them.",
+    },
+    {
+      label: pickLabel ? `Explain ${pickLabel}` : "Summarize & rank",
+      prompt: pickLabel
+        ? "Explain the residue I've selected — its structural role and local environment — and " +
+          "whether it's a promising site to mutate; then zoom in and label it."
+        : "Summarize the current folding results (pTM, ipTM, pLDDT, and binding affinity where " +
+          "available), rank them, and tell me what stands out and what to try next.",
+    },
   ];
 
   // Most recent directives surfaced as subtle inline activity chips.
