@@ -83,7 +83,8 @@ BACKEND_ACTION_TOOLS: list[dict[str, Any]] = [
             "Submit ONE folding/co-folding job and return a job id immediately (does NOT wait "
             "for the result; the UI shows it when done). One protein sequence = monomer; add "
             "partner_sequence_id or multiple protein_sequences for a complex (e.g. antibody-antigen); "
-            "add ligand_smiles for ligand co-folding."
+            "add ligand_smiles for ligand co-folding. To fold a homo-oligomer (the same protein "
+            "with itself, N identical copies as one complex), set copies=N — do not repeat the sequence."
         ),
         "input_schema": {
             "type": "object",
@@ -91,6 +92,7 @@ BACKEND_ACTION_TOOLS: list[dict[str, Any]] = [
                 "sequence_id": {"type": "integer", "description": "fold this saved sequence (from the context list)"},
                 "protein_sequences": {"type": "array", "items": {"type": "string"}},
                 "partner_sequence_id": {"type": "integer", "description": "saved partner/antigen chain"},
+                "copies": {"type": "integer", "minimum": 1, "maximum": 24, "description": "fold this many identical copies of the single sequence as a homo-oligomer complex (e.g. 9 for a 9-mer); do NOT also repeat the sequence"},
                 "ligand_smiles": {"type": "array", "items": {"type": "string"}},
                 "affinity_ligand_index": {"type": "integer"},
                 "model": {"type": "string", "enum": list(FOLD_MODELS)},

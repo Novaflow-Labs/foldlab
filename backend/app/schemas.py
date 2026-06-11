@@ -9,7 +9,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .constants import DEFAULT_FOLD_MODEL
 
@@ -60,6 +60,10 @@ class FoldSubmitRequest(BaseModel):
     protein_sequences: list[str] = []
     sequence_id: int | None = None
     partner_sequence_id: int | None = None  # appended as an extra chain
+    copies: int = Field(
+        default=1, ge=1, le=24,
+        description="Fold this many identical copies of the single sequence as a homo-oligomer.",
+    )
     ligand_smiles: list[str] = []
     affinity_ligand_index: int | None = None
     model: str = DEFAULT_FOLD_MODEL

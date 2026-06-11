@@ -33,18 +33,22 @@ def _resolve_chains(
     protein_sequences: list[str],
     sequence_id: int | None,
     partner_sequence_id: int | None,
+    copies: int = 1,
 ) -> list[str]:
     """Resolve the protein chains for a job.
 
     Explicit `protein_sequences` win; otherwise read residues straight from the
-    DB by id (kept decoupled from services.sequences). A partner sequence is
-    appended as an extra chain.
+    DB by id (kept decoupled from services.sequences). `copies` > 1 replicates a
+    single primary chain into a homo-oligomer (copies=9 -> a 9-mer). A partner
+    sequence is appended as an extra chain.
     """
     chains: list[str] = list(protein_sequences or [])
     if not chains and sequence_id is not None:
         seq = session.get(Sequence, sequence_id)
         if seq is not None:
             chains = [seq.residues]
+    if copies and copies > 1 and len(chains) == 1:
+        chains = chains * copies
     if partner_sequence_id is not None:
         partner = session.get(Sequence, partner_sequence_id)
         if partner is not None:
@@ -60,6 +64,7 @@ def submit_fold(session: Session, req: FoldSubmitRequest) -> FoldJob:
         protein_sequences=req.protein_sequences,
         sequence_id=req.sequence_id,
         partner_sequence_id=req.partner_sequence_id,
+        copies=req.copies,
     )
     freq = FoldRequest(
         protein_sequences=chains,

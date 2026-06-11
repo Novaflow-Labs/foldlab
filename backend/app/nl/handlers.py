@@ -216,6 +216,7 @@ async def _submit_fold(
         "sequence_id",
         "protein_sequences",
         "partner_sequence_id",
+        "copies",
         "ligand_smiles",
         "affinity_ligand_index",
         "model",

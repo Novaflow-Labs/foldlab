@@ -40,6 +40,8 @@ export interface FoldSubmitRequest {
   protein_sequences?: string[];
   sequence_id?: number | null;
   partner_sequence_id?: number | null;
+  /** Fold this many identical copies of the single sequence as a homo-oligomer (e.g. 9 for a 9-mer). */
+  copies?: number;
   ligand_smiles?: string[];
   affinity_ligand_index?: number | null;
   model?: FoldModel;
