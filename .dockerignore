@@ -1,0 +1,15 @@
+# Keep the build context small and avoid copying local-only artifacts into the
+# image (the SPA is rebuilt inside the Dockerfile; deps are reinstalled).
+**/node_modules
+**/.venv
+**/dist
+**/__pycache__
+**/*.pyc
+**/*.db
+**/.pytest_cache
+**/.ruff_cache
+**/.vite-check-d
+.git
+.env
+backend/.env
+backend/app/data/structures/*.pdb

@@ -55,3 +55,27 @@ cd frontend && npm run dev        # http://localhost:5173  (proxies /api -> 127.
 Copy `.env.example` → `backend/.env` and fill in as needed:
 - `ANTHROPIC_API_KEY` — enables the chat assistant.
 - `ROWAN_API_KEY` + `FOLDING_PROVIDER=rowan` — enables **real** folding (leave `mock` for the zero-cost demo).
+
+## Deploy (single service on Render)
+
+The repo ships a multi-stage `Dockerfile` (builds the SPA, then FastAPI serves it + `/api`
++ the poller — same origin, no CORS) and a `render.yaml` Blueprint.
+
+1. Render dashboard → **New → Blueprint** → pick this repo → Render reads `render.yaml`.
+2. Set the three secret env vars when prompted:
+   - `ANTHROPIC_API_KEY` — chat assistant
+   - `ROWAN_API_KEY` — live folding (`FOLDING_PROVIDER` is preset to `rowan`)
+   - `GATE_PASSWORD` — turns on the HTTP Basic gate (username `foldlab`); visitors are
+     prompted once. Leave it unset to make the URL fully open.
+3. Deploy. Health check is `/api/health` (gate-exempt); `MAX_CREDITS=50` caps Rowan spend per fold.
+
+Run the same image locally:
+```bash
+docker build -t foldlab .
+docker run -p 8000:8000 -e GATE_PASSWORD=secret -e ANTHROPIC_API_KEY=… -e ROWAN_API_KEY=… foldlab
+# open http://127.0.0.1:8000  (login: foldlab / secret)
+```
+
+> Render's free tier has an **ephemeral** filesystem (the SQLite DB + saved structures reset on
+> restart/redeploy — fine for a demo) and spins down after inactivity. For persistence, add a
+> Render disk or point `DB_URL`/`STRUCTURE_DIR` at durable storage.

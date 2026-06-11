@@ -1,0 +1,26 @@
+# Render Blueprint — single Docker web service (SPA + API + poller).
+# Deploy: Render dashboard → New → Blueprint → pick this repo → set the three
+# `sync: false` secrets below. Health check hits /api/health (gate-exempt).
+services:
+  - type: web
+    name: foldlab
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: FOLDING_PROVIDER
+        value: rowan
+      - key: FRONTEND_DIST
+        value: /app/frontend_dist
+      - key: MAX_CREDITS          # cap Rowan spend per fold on the public URL
+        value: "50"
+      - key: GATE_USER
+        value: foldlab
+      # --- set these as secrets in the Render dashboard (never committed) ---
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ROWAN_API_KEY
+        sync: false
+      - key: GATE_PASSWORD        # enables the HTTP Basic gate; pick a password
+        sync: false

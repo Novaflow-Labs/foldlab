@@ -33,6 +33,15 @@ class Settings(BaseSettings):
     # Allowed CORS origins for a deployed frontend (dev uses the Vite proxy).
     cors_origins: list[str] = ["http://localhost:5173"]
 
+    # Production single-service deploy: directory of the built SPA to serve.
+    # Empty = don't serve static (local dev uses the Vite server instead).
+    frontend_dist: str = ""
+
+    # Optional HTTP Basic gate for a public deploy. OFF unless gate_password is
+    # set; /api/health is always exempt (for platform health checks).
+    gate_user: str = "foldlab"
+    gate_password: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:
