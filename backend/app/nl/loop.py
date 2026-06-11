@@ -28,6 +28,7 @@ from sqlmodel import Session
 
 from ..config import get_settings
 from ..schemas import ChatRequest, SSEEvent
+from ..services import jobs, sequences
 from .client import MissingAPIKeyError, get_anthropic_client
 from .handlers import dispatch_tool
 from .prompt import SYSTEM
@@ -41,13 +42,42 @@ MAX_TOKENS = 4096
 SYSTEM_BLOCKS = [{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}]
 
 
-def _build_initial_messages(req: ChatRequest) -> list[dict[str, Any]]:
-    """One user message: viewer context as a <system-reminder> note, then the user text."""
-    parts: list[str] = []
+def _project_context(session: Session, req: ChatRequest) -> str:
+    """Compact, model-facing project summary so the assistant never has to ask the
+    user for a project id or a sequence id."""
+    try:
+        seqs = sequences.list_sequences(session, req.project_id)
+    except Exception:  # noqa: BLE001 - context is best-effort, never fatal
+        seqs = []
+    seq_str = (
+        "; ".join(f"#{s.id} {s.name} ({len(s.residues)}aa, {s.kind})" for s in seqs)
+        if seqs
+        else "(none saved yet)"
+    )
+    try:
+        recent = list(jobs.list_jobs(session, req.project_id))[-8:]
+    except Exception:  # noqa: BLE001
+        recent = []
+    job_str = (
+        "; ".join(f"#{j.id} '{j.label or '?'}' {j.state}" for j in recent)
+        if recent
+        else "(none yet)"
+    )
+    return (
+        f"Project #{req.project_id} (use it automatically; never ask the user for a project "
+        f"or sequence id).\nSaved sequences: {seq_str}\nRecent jobs: {job_str}"
+    )
+
+
+def _build_initial_messages(session: Session, req: ChatRequest) -> list[dict[str, Any]]:
+    """One user message: project + viewer context as <system-reminder> notes, then the text."""
+    parts: list[str] = [
+        f"<system-reminder>\n{_project_context(session, req)}\n</system-reminder>"
+    ]
     if req.context:
         ctx = json.dumps(req.context, sort_keys=True, default=str)
         parts.append(
-            "<system-reminder>\nCurrent viewer context (use it to resolve references like "
+            "<system-reminder>\nViewer context (resolve references like "
             f'"this" / "the selected residue"):\n{ctx}\n</system-reminder>'
         )
     parts.append(req.message)
@@ -74,7 +104,7 @@ async def run_chat(
             return
 
     model = get_settings().anthropic_model
-    messages = _build_initial_messages(req)
+    messages = _build_initial_messages(session, req)
 
     # Worker thread pushes (kind, payload) tuples; this coroutine drains and yields them.
     # Buffer is generous and events are small, so a non-blocking send is safe here.

@@ -88,15 +88,14 @@ BACKEND_ACTION_TOOLS: list[dict[str, Any]] = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "project_id": {"type": "integer"},
-                "sequence_id": {"type": "integer", "description": "fold this saved sequence"},
+                "sequence_id": {"type": "integer", "description": "fold this saved sequence (from the context list)"},
                 "protein_sequences": {"type": "array", "items": {"type": "string"}},
                 "partner_sequence_id": {"type": "integer", "description": "saved partner/antigen chain"},
                 "ligand_smiles": {"type": "array", "items": {"type": "string"}},
                 "affinity_ligand_index": {"type": "integer"},
                 "model": {"type": "string", "enum": list(FOLD_MODELS)},
             },
-            "required": ["project_id"],
+            "required": [],
             "additionalProperties": False,
         },
     },
@@ -110,7 +109,6 @@ BACKEND_ACTION_TOOLS: list[dict[str, Any]] = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "project_id": {"type": "integer"},
                 "base_sequence_id": {"type": "integer"},
                 "strategy": {"type": "string", "enum": list(VARIANT_STRATEGIES)},
                 "params": {"type": "object"},
@@ -118,7 +116,7 @@ BACKEND_ACTION_TOOLS: list[dict[str, Any]] = [
                 "model": {"type": "string", "enum": list(FOLD_MODELS)},
                 "name": {"type": "string"},
             },
-            "required": ["project_id", "base_sequence_id", "strategy"],
+            "required": ["base_sequence_id", "strategy"],
             "additionalProperties": False,
         },
     },
@@ -131,10 +129,9 @@ BACKEND_ACTION_TOOLS: list[dict[str, Any]] = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "project_id": {"type": "integer"},
                 "batch_run_id": {"type": "integer"},
             },
-            "required": ["project_id"],
+            "required": [],
             "additionalProperties": False,
         },
     },
