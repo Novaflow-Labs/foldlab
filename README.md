@@ -16,24 +16,42 @@ API keys never reach the browser. Folding is async (submit → poll → retrieve
 
 ## Run locally
 
-### Backend (Python ≥3.12)
-```powershell
+Requires **Python ≥ 3.12** and **Node ≥ 18**. The default `MockProvider` runs the whole app
+with **zero API spend** — no keys needed to see it working.
+
+### First-time setup
+```bash
+# backend — create the venv and install into it (no activation needed)
 cd backend
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1            # macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt -r requirements-dev.txt
-copy ..\.env.example .env               # then edit keys (optional in mock mode)
-uvicorn app.main:app --reload --port 8000
+.venv/Scripts/python.exe -m pip install -r requirements.txt -r requirements-dev.txt   # Git-Bash
+#   PowerShell:    .\.venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-dev.txt
+#   macOS/Linux:   .venv/bin/python          -m pip install -r requirements.txt -r requirements-dev.txt
+cd ../frontend && npm install
 ```
 
-### Frontend
+### Start both (one command, from the repo root)
+```bash
+bash scripts/dev.sh                                  # macOS/Linux/Git-Bash (Ctrl-C stops both)
+```
 ```powershell
-cd frontend
-npm install
-npm run dev                              # http://localhost:5173 (proxies /api -> :8000)
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1   # Windows PowerShell
 ```
 
-Set `FOLDING_PROVIDER=rowan` in `backend/.env` (with `ROWAN_API_KEY`) to run real folding;
-leave it `mock` for a zero-cost demo. The chat assistant needs `ANTHROPIC_API_KEY`.
+### …or start manually (two terminals)
+Call the **venv's** Python directly — a bare `uvicorn` uses your *global* Python, which lacks
+the deps (`ModuleNotFoundError: sqlmodel`).
+```bash
+# terminal 1 — backend
+cd backend && .venv/Scripts/python.exe -m uvicorn app.main:app --reload --port 8000
+#   PowerShell:    .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+#   macOS/Linux:   .venv/bin/python          -m uvicorn app.main:app --reload --port 8000
 
-See `docs`/the implementation plan for module ownership and contracts.
+# terminal 2 — frontend
+cd frontend && npm run dev        # http://localhost:5173  (proxies /api -> 127.0.0.1:8000)
+```
+
+### Keys (optional)
+Copy `.env.example` → `backend/.env` and fill in as needed:
+- `ANTHROPIC_API_KEY` — enables the chat assistant.
+- `ROWAN_API_KEY` + `FOLDING_PROVIDER=rowan` — enables **real** folding (leave `mock` for the zero-cost demo).
